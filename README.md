@@ -327,4 +327,30 @@ Variables esperadas:
 - Validar y sanitizar entradas (usar `class-validator` y `ValidationPipe` si se desea).
 
 
-Si necesita que expanda alguna sección (diagramas, ejemplos de request/response, o extracción de secretos a variables de entorno), indíquelo y lo implemento.
+**Guard JWT y protección del endpoint `GET /users`**
+
+Se agregó un guard simple para exigir autorización en el endpoint `GET /users`.
+
+- Archivo del guard: `src/auth/guards/jwt-auth-guards.ts`.
+- Comportamiento: el guard comprueba la cabecera `Authorization` en formato `Bearer <token>` y verifica el token JWT usando la misma clave hardcodeada (`your-secret-key`) que está en `src/auth/auth.module.ts`. Si falta la cabecera o el token es inválido/expirado, responde con `401 Unauthorized`.
+
+Propósito: facilitar una comprobación rápida de autorización en endpoints. En producción se recomienda extraer el secreto a `JWT_SECRET`, usar `Passport`/`@nestjs/passport` y `JwtStrategy`, y manejar usuarios desde la base de datos.
+
+Prueba rápida (desde una terminal con `curl`):
+
+- Sin cabecera Authorization (respuesta esperada):
+
+  curl -i http://localhost:3000/users
+
+  Respuesta: `401 Unauthorized` con cuerpo `{ "message": "Missing Authorization header", ... }`
+
+- Con token inválido:
+
+  curl -i -H "Authorization: Bearer invalid.token.here" http://localhost:3000/users
+
+  Respuesta: `401 Unauthorized` con cuerpo `{ "message": "Invalid or expired token", ... }`
+
+Cómo funciona en el código:
+
+- `UserController.findAll()` está decorado con `@UseGuards(JwtAuthGuard)` y por tanto requiere autorización para poder ejecutarse.
+
